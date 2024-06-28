@@ -44,18 +44,20 @@ int main(void)
         figlio1();
         exit(0);
     }
-    
-    F2 = fork();
-    if (F2 < 0)
+    if (F1 > 0)
     {
-        fprintf(stderr, "Errore nella creazione di un figlio\n");
-        return -1;
-    }
-    
-    else if (F2 == 0)
-    {
-        figlio2();
-        exit(0);
+        F2 = fork();
+        if (F2 < 0)
+        {
+            fprintf(stderr, "Errore nella creazione di un figlio\n");
+            return -1;
+        }
+        
+        else if (F2 == 0)
+        {
+            figlio2();
+            exit(0);
+        }
     }
     
     waitpid(F1, &status1, 0);
