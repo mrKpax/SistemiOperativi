@@ -77,17 +77,19 @@ int main(void)
         fibonacci(30);
         exit(0);
     }
-    
-    F2 = fork();
-    if (F2 < 0)
+    else if (F1 > 0)
     {
-        fprintf(stderr, "Errore\n");
-        return -1;
-    }
-    else if (F2 == 0)
-    {
-        fattoriale(20);
-        exit(0);
+        F2 = fork();
+        if (F2 < 0)
+        {
+            fprintf(stderr, "Errore\n");
+            return -1;
+        }
+        else if (F2 == 0)
+        {
+            fattoriale(20);
+            exit(0);
+        }
     }
     
     waitpid(F1, &status1, 0);
