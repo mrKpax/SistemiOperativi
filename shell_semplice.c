@@ -1,9 +1,6 @@
 /*
     Questo programma agisce come una shell molto semplice.
-    Riceve comandi dall'utente, crea un processo figlio per eseguire ciascun comando e
-    attende che il processo figlio termini prima di permettere l'inserimento di un
-    nuovo comando. Gestisce errori durante la creazione dei processi e
-    l'esecuzione dei comandi, fornendo feedback appropriato all'utente.
+    Ciclicamente stampa un prompt %, legge un comando inserito dall'utente dopo il prompt e crea un nuovo figlio che esegue tale comando. Poi ne aspetta la terminazione.
 */
 
 #include <stdio.h>
@@ -13,46 +10,37 @@
 #include <unistd.h>
 #include <string.h>
 
-#define SIZE 100 // Dim. massima buffer
 
 int main(void)
 {
-    char buf[SIZE];
+    char buf[512];
     int pid, status;
     
-    printf("%% ");
-    while (fgets(buf, SIZE, stdin) != NULL)
+    printf("%% "); //prompt
+    
+    while (fgets(buf, 512, stdin) != NULL)
     {
-        buf[strlen(buf)-1] = 0; // Sostituisce ultimo carattere di newline con NULL
-        pid = fork();
-        
-        
-        if (pid < 0)
+        buf[strlen(buf) -1] = 0; //sostituisce newline con NULL
+        if ((pid = fork()) < 0)
         {
-            fprintf(stderr, "Errore nella fork\n");
+            fprintf(stderr, "Errore\n");
+            exit(-1);
+        }
+        else if (pid == 0) //figlio
+        {
+            if (execlp(buf, buf, (char *) 0) == -1)
+            {
+                printf("Errore, impossibile eseguire %s\n", buf);
+                exit(-1);
+            }
+            exit(0);
+        }
+        if ((pid = waitpid(pid, &status, 0)) < 0) //padre
+        {
+            printf("Errore di sistema: waitpid\n");
             exit(1);
         }
-        
-        if (pid == 0)
-        {
-            if (execl(buf, buf, NULL) == -1)
-            {
-                fprintf(stderr, "Errore nel comando\n");
-                exit(1);
-            }
-        }
-        else
-        {
-            if (waitpid(pid, &status, 0) < 0)
-            {
-                fprintf(stderr, "Errore nella waitpid\n");
-                exit(1);
-            }
-        }
-        
         printf("%% ");
     }
-    
-    return 0;
-    
+    exit(0);
 }
