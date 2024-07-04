@@ -1,0 +1,28 @@
+/*
+    Programma che utilizzando le system call read e write e i file descriptor ATDIN_FILENO e STDOUT_FILENO copi continuamente quello che viene 
+    letto sullo standard input sullo standard output.
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#define BUFFSIZE 8192
+
+int main(void)
+{
+    int n;
+    char buf[BUFFSIZE];
+    
+    while ((n = read(STDIN_FILENO, buf, BUFFSIZE)) > 0)
+        if (write(STDOUT_FILENO, buf, n) != n)
+        {
+            printf("Write error\n");
+            exit(1);
+        }
+    if(n < 0)
+    {
+        printf("Read error\n");
+        exit(0);
+    }
+}
