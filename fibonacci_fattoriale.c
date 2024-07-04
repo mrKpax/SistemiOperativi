@@ -15,66 +15,62 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <sys/signal.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
-pid_t F1, F2;
-
-void handle_sigint1(int sig)
+int fibonacci(int n)
 {
-    printf("PID di F1: %d\n", getpid());
+    if(n<=1)
+        return n;
+    return fibonacci(n-1) + fibonacci(n-2);
 }
 
-void handle_sigint2(int sig)
+long int fattoriale(int n)
 {
-    char res[2];
-    printf("Vuoi che il processo F2 con PID %d continui? (Y/N):\n", getpid());
-    scanf("%1s", res);
-    if (res[0] == 'N')
+    if (n==0)
+        return 1;
+    return n * fattoriale(n-1);
+}
+
+void handler1(int sig)
+{
+    printf("Figlio 1, PID %d\n", getpid());
+}
+
+void handler2(int sig)
+{
+    char res[100];
+    printf("Figlio 2: Continuare esecuzione? (Y/N)\n");
+    scanf("%s", res);
+    if (*res == 'Y')
+        printf("Figlio 2: Continuo\n");
+    else
     {
-        printf("Processo F2 con PID %d terminato\n", getpid());
+        printf("Terminazione Figlio 2\n");
         exit(0);
-    }
-}
-
-void fibonacci(int n)
-{
-    signal(SIGINT, handle_sigint1);
-    int first = 0, second = 1, next;
-    for (int i=0; i<n; i++)
-    {
-        printf("Fibonacci: %d\n", first);
-        next = first + second;
-        first = second;
-        second = next;
-        sleep(2); // Attesa SIGINT
-    }
-}
-
-void fattoriale(int n)
-{
-    signal(SIGINT, handle_sigint2);
-    long fact = 1;
-    for (int i=1; i<=n; i++)
-    {
-        fact = fact * i;
-        printf("Fattoriale: %ld\n", fact);
-        sleep(3); // Attesa SIGINT
     }
 }
 
 int main(void)
 {
-    int F1, F2, status1, status2;
+    int F1, F2;
     
     F1 = fork();
     if (F1 < 0)
     {
-        fprintf(stderr, "Errore\n");
-        return -1;
+        printf("Errore\n");
+        exit(-1);
     }
     else if (F1 == 0)
     {
-        fibonacci(30);
+        signal(SIGINT, handler1);
+        
+        for (int i = 0; i <= 30; ++i)
+        {
+            printf("Fibonacci %d: %d\n", i, fibonacci(i));
+            sleep(1);
+        }
+        
         exit(0);
     }
     else if (F1 > 0)
@@ -82,18 +78,32 @@ int main(void)
         F2 = fork();
         if (F2 < 0)
         {
-            fprintf(stderr, "Errore\n");
-            return -1;
+            printf("Errore\n");
+            exit(-1);
         }
         else if (F2 == 0)
         {
-            fattoriale(20);
+            signal(SIGINT, handler2);
+            
+            for (int i=0; i<=20; ++i)
+            {
+                printf("Fattoriale %d: %lu\n", i, fattoriale(i));
+                sleep(1);
+            }
+            
             exit(0);
         }
+        else //padre
+        {
+            signal(SIGINT, SIG_IGN);
+            wait(NULL);
+            wait(NULL);
+            printf("\n");
+            printf("Padre: PID Figlio 1: %d\n", F1);
+            printf("Padre: PID Figlio 2: %d\n", F2);
+            printf("Figli terminati\n");
+
+        }
     }
-    
-    waitpid(F1, &status1, 0);
-    waitpid(F2, &status2, 0);
-    printf("Figli con PID %d e %d terminati\n", F1, F2);
-    return 0;
 }
+
